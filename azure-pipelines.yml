@@ -6,7 +6,7 @@ variables:
   releaseBranchName: 'release'
 
 schedules:
-- cron: '0 7 * * *'
+- cron: '30 7 * * *'
   displayName: 'Deploy every day at 7 A.M.'
   branches:
     include:
@@ -128,4 +128,27 @@ stages:
             inputs:
               azureSubscription: 'Resource Manager - Space Game'
               appName: '$(WebAppNameTest)'
+              package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
+
+- stage: 'Staging'
+  displayName: 'Deploy to the staging environment'
+  dependsOn: Test
+  jobs:
+  - deployment: Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: staging
+    variables:
+    - group: 'Release'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+          - task: AzureWebApp@1
+            displayName: 'Azure App Service Deploy: staging website'
+            inputs:
+              azureSubscription: 'Resource Manager - Space Game'
+              appName: '$(WebAppNameStaging)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
