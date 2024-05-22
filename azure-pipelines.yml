@@ -3,6 +3,7 @@ trigger:
 
 variables:
   buildConfiguration: 'Release'
+  releaseBranchName: 'release'
 
 stages:
 - stage: 'Build'
@@ -11,7 +12,7 @@ stages:
   - job: 'Build'
     displayName: 'Build job'
     pool:
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-latest'
       demands:
       - npm
 
@@ -20,6 +21,9 @@ stages:
       dotnetSdkVersion: '6.x'
 
     steps:
+    - script: 'echo $(Build.SourceBranchName)'
+      displayName: 'branch: $(Build.SourceBranchName)'
+
     - task: UseDotNet@2
       displayName: 'Use .NET SDK $(dotnetSdkVersion)'
       inputs:
@@ -65,13 +69,19 @@ stages:
     - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: drop
 
-- stage: 'Deploy'
-  displayName: 'Deploy the web application'
+- stage: 'Dev'
+  displayName: 'Deploy the dev environment'
   dependsOn: Build
+  condition: |
+    and
+    (
+      succeeded(),
+      eq(variables['Build.SourceBranchName'], variables['releaseBranchName'])
+    )
   jobs:
   - deployment: Deploy
     pool:
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-latest'
     environment: dev
     variables:
     - group: Release
@@ -84,6 +94,6 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Azure App Service Deploy: website'
             inputs:
-              azureSubscription: 'Resource Manager - Tailspin - Space Game'
-              appName: '$(WebAppName)'
+              azureSubscription: 'Resource Manager - Space Game'
+              appName: '$(WebAppNameDev)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
