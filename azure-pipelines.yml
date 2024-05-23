@@ -178,8 +178,20 @@ stages:
             displayName: 'Azure App Service Deploy: staging website'
             inputs:
               azureSubscription: 'Resource Manager - Space Game'
+              deployToSlotOrASE: 'true'
+              resourceGroupName: 'tdc-devops-rg'
+              slotName: 'swap'
               appName: '$(WebAppNameStaging)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
+          - task: AzureAppServiceManage@0
+            displayName: 'Swap deployment slots'
+            inputs:
+              azureSubscription: 'Resource Manager - Space Game'
+              resourceGroupName: 'tdc-devops-rg'
+              webAppName: '$(WebAppNameStaging)'
+              sourceSlot: 'swap'
+              targetSlot: 'production'
+              action: 'Swap Slots'
   # - job: LoadTests
   #   dependsOn: Deploy
   #   displayName: 'Load tests'
