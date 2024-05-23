@@ -183,15 +183,15 @@ stages:
               slotName: 'swap'
               appName: '$(WebAppNameStaging)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
-          - task: AzureAppServiceManage@0
-            displayName: 'Swap deployment slots'
-            inputs:
-              azureSubscription: 'Resource Manager - Space Game'
-              resourceGroupName: 'tdc-devops-rg'
-              webAppName: '$(WebAppNameStaging)'
-              sourceSlot: 'swap'
-              targetSlot: 'production'
-              action: 'Swap Slots'
+          # - task: AzureAppServiceManage@0
+          #   displayName: 'Swap deployment slots'
+          #   inputs:
+          #     azureSubscription: 'Resource Manager - Space Game'
+          #     resourceGroupName: 'tdc-devops-rg'
+          #     webAppName: '$(WebAppNameStaging)'
+          #     sourceSlot: 'swap'
+          #     targetSlot: 'production'
+          #     action: 'Swap Slots'
   # - job: LoadTests
   #   dependsOn: Deploy
   #   displayName: 'Load tests'
@@ -215,3 +215,27 @@ stages:
   #     inputs:
   #       testResultsFormat: JUnit
   #       testResultsFiles: JUnit.xml
+
+- stage: 'Production'
+  displayName: 'Deploy to the production environment'
+  dependsOn: Test
+  jobs:
+  - deployment: Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: production
+    variables:
+    - group: 'Release'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureAppServiceManage@0
+            displayName: 'Swap deployment slots to proudction'
+            inputs:
+              azureSubscription: 'Resource Manager - Space Game'
+              resourceGroupName: 'tdc-devops-rg'
+              webAppName: '$(WebAppNameStaging)'
+              sourceSlot: 'swap'
+              targetSlot: 'production'
+              action: 'Swap Slots'
